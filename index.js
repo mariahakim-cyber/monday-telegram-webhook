@@ -118,10 +118,10 @@ app.post("/monday/webhook", async (req, res) => {
 
   const msg =
     `📌 *Mesa de Ayuda: Actualización Nivel de Criticidad*\n` +
-    `#️⃣ Item: ${itemId}\n` +
-    `📝 Descripción: ${descripcion || "(vacío)"}\n` +
-    `🙋🏽 Solicitante: ${solicitante || "(vacío)"}\n` +
-    `🚨 To: ${newValue || "(sin valor)"}`;
+    `#️⃣ *Item:* ${itemId}\n` +
+    `📝 *Descripción:* ${descripcion || "(vacío)"}\n` +
+    `🙋🏽 *Solicitante:* ${solicitante || "(vacío)"}\n` +
+    `🚨 *To:* ${newValue || "(sin valor)"}`;
 
   await sendTelegram(msg);
   return res.status(200).json({ ok: true });
