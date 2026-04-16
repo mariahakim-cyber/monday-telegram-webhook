@@ -7,7 +7,7 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 
-// IDs de tus columnas en Monday
+// IDs de columnas en Monday
 const COL_DESCRIPCION = "descripci_n9";
 const COL_SOLICITANTE = "solicitante";
 const COL_PROYECTO = "lookup_mktwbpyv";
@@ -26,14 +26,20 @@ async function sendTelegram(text) {
     }),
   });
 
-  if (!resp.ok) console.log("Telegram error:", await resp.text());
+  if (!resp.ok) {
+    console.log("Telegram error:", await resp.text());
+  }
 }
 
 function prettyColumnValue(col) {
   if (!col) return "";
+
   if (col.text) return col.text;
 
+  if (col.display_value) return col.display_value;
+
   if (!col.value) return "";
+
   try {
     const v = JSON.parse(col.value);
 
@@ -41,8 +47,16 @@ function prettyColumnValue(col) {
       return v.personsAndTeams.map(p => p.name || p.id).join(", ");
     }
 
-    if (typeof v?.display_value === "string") {
+    if (typeof v?.display_value === "string" && v.display_value) {
       return v.display_value;
+    }
+
+    if (Array.isArray(v?.display_value) && v.display_value.length) {
+      return v.display_value.join(", ");
+    }
+
+    if (Array.isArray(v?.linkedPulseIds) && v.linkedPulseIds.length) {
+      return v.linkedPulseIds.map(p => p.linkedPulseId || p.id).join(", ");
     }
 
     return JSON.stringify(v);
@@ -63,6 +77,9 @@ async function fetchMondayItemFields(itemId) {
           id
           text
           value
+          ... on MirrorValue {
+            display_value
+          }
         }
       }
     }
@@ -74,7 +91,10 @@ async function fetchMondayItemFields(itemId) {
       "Content-Type": "application/json",
       Authorization: MONDAY_API_TOKEN,
     },
-    body: JSON.stringify({ query, variables: { itemId: String(itemId) } }),
+    body: JSON.stringify({
+      query,
+      variables: { itemId: String(itemId) },
+    }),
   });
 
   const data = await resp.json();
