@@ -10,6 +10,7 @@ const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 // IDs de tus columnas en Monday
 const COL_DESCRIPCION = "descripci_n9";
 const COL_SOLICITANTE = "solicitante";
+const COL_PROYECTO = "lookup_mktwbpyv";
 
 async function sendTelegram(text) {
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
@@ -57,7 +58,7 @@ async function fetchMondayItemFields(itemId) {
   const query = `
     query ($itemId: [ID!]) {
       items(ids: $itemId) {
-        column_values(ids: ["${COL_DESCRIPCION}", "${COL_SOLICITANTE}"]) {
+        column_values(ids: ["${COL_DESCRIPCION}", "${COL_SOLICITANTE}", "${COL_PROYECTO}"]) {
           id
           text
           value
@@ -80,10 +81,12 @@ async function fetchMondayItemFields(itemId) {
 
   const descripcionCol = cols.find(c => c.id === COL_DESCRIPCION);
   const solicitanteCol = cols.find(c => c.id === COL_SOLICITANTE);
+  const proyectoCol = cols.find(c => c.id === COL_PROYECTO);
 
   return {
     descripcion: prettyColumnValue(descripcionCol),
     solicitante: prettyColumnValue(solicitanteCol),
+    proyecto: prettyColumnValue(proyectoCol),
   };
 }
 
@@ -118,6 +121,7 @@ app.post("/monday/webhook", async (req, res) => {
 
   const msg =
     `📌 *Mesa de Ayuda: Actualización Nivel de Criticidad*\n` +
+    `📂 Proyecto: ${proyecto || "(vacío)"}\n` +
     `#️⃣ *Item:* ${itemId}\n` +
     `📝 *Descripción:* ${descripcion || "(vacío)"}\n` +
     `🙋🏽 *Solicitante:* ${solicitante || "(vacío)"}\n` +
