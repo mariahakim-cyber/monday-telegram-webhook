@@ -22,30 +22,29 @@ async function sendTelegram(text) {
     body: JSON.stringify({
       chat_id: TELEGRAM_CHAT_ID,
       text,
-      parse_mode: "Markdown", // para que *...* salga en negritas
+      parse_mode: "Markdown",
     }),
   });
 
   if (!resp.ok) console.log("Telegram error:", await resp.text());
 }
 
-// Convierte column_value a algo legible
 function prettyColumnValue(col) {
   if (!col) return "";
-  // col.text suele venir ya human-readable
   if (col.text) return col.text;
 
-  // fallback: intentar leer value
   if (!col.value) return "";
   try {
     const v = JSON.parse(col.value);
 
-    // people/person
     if (Array.isArray(v?.personsAndTeams) && v.personsAndTeams.length) {
       return v.personsAndTeams.map(p => p.name || p.id).join(", ");
     }
 
-    // general fallback
+    if (typeof v?.display_value === "string") {
+      return v.display_value;
+    }
+
     return JSON.stringify(v);
   } catch {
     return String(col.value);
@@ -53,7 +52,9 @@ function prettyColumnValue(col) {
 }
 
 async function fetchMondayItemFields(itemId) {
-  if (!MONDAY_API_TOKEN) return { descripcion: "", solicitante: "" };
+  if (!MONDAY_API_TOKEN) {
+    return { descripcion: "", solicitante: "", proyecto: "" };
+  }
 
   const query = `
     query ($itemId: [ID!]) {
@@ -94,7 +95,6 @@ app.get("/", (req, res) => res.send("ok"));
 app.get("/monday/webhook", (req, res) => res.status(200).json({ ok: true }));
 
 app.post("/monday/webhook", async (req, res) => {
-  // ✅ Monday verification
   if (req.body?.challenge) {
     return res.status(200).json({ challenge: req.body.challenge });
   }
@@ -102,19 +102,20 @@ app.post("/monday/webhook", async (req, res) => {
   const event = req.body?.event || {};
   const itemId = event.pulseId ?? event.itemId ?? "unknown";
 
-  // valor nuevo del status
   const newValue =
     event.value?.label?.text ??
     event.value?.text ??
     (typeof event.value === "string" ? event.value : "");
 
-  // Traer descripcion + solicitante desde Monday
   let descripcion = "";
   let solicitante = "";
+  let proyecto = "";
+
   try {
     const fields = await fetchMondayItemFields(itemId);
     descripcion = fields.descripcion || "";
     solicitante = fields.solicitante || "";
+    proyecto = fields.proyecto || "";
   } catch (e) {
     console.log("Monday fetch error:", e?.message || e);
   }
