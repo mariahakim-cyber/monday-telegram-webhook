@@ -142,7 +142,7 @@ app.post("/monday/webhook", async (req, res) => {
 
   const msg =
     `📌 *Mesa de Ayuda: Actualización Nivel de Criticidad*\n` +
-    `📂 Proyecto: ${proyecto || "(vacío)"}\n` +
+    `📂 *Proyecto:* ${proyecto || "(vacío)"}\n` +
     `#️⃣ *Item:* ${itemId}\n` +
     `📝 *Descripción:* ${descripcion || "(vacío)"}\n` +
     `🙋🏽 *Solicitante:* ${solicitante || "(vacío)"}\n` +
